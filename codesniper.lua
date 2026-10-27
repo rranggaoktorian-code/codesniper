@@ -1,5 +1,5 @@
 -- =======================================================
--- ULTIMATE "USE CODE" SNIPER & EXACT REMOTE/UI BYPASS
+-- FIXED "USE CODE" FRAGMENTED SNIPER & CLEAN EXTRACTOR
 -- =======================================================
 
 local CoreGui = game:GetService("CoreGui")
@@ -32,7 +32,7 @@ Corner.Parent = Frame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-Title.Text = "⚡ EXACT FIX SNIPER (USE CODE)"
+Title.Text = "⚡ CLEAN FRAGMENT SNIPER"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.Font = Enum.Font.SourceSansBold
@@ -68,12 +68,12 @@ local BtnCorner = Instance.new("UICorner")
 BtnCorner.CornerRadius = UDim.new(0, 6)
 BtnCorner.Parent = RedeemBtn
 
--- Kotak Tampilan Hasil Gabungan Kode
+-- Kotak Tampilan Hasil Gabungan Kode Bersih
 local CodeInput = Instance.new("TextBox")
 CodeInput.Size = UDim2.new(0.88, 0, 0, 35)
 CodeInput.Position = UDim2.new(0.06, 0, 0.70, 0)
 CodeInput.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-CodeInput.PlaceholderText = "Gabungan kode muncul di sini..."
+CodeInput.PlaceholderText = "Kode bersih muncul di sini..."
 CodeInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 CodeInput.Text = ""
 CodeInput.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -86,13 +86,13 @@ InputCorner.CornerRadius = UDim.new(0, 6)
 InputCorner.Parent = CodeInput
 
 -- =======================================================
--- 2. LOGIKA PENEMBAKAN PRESISI KE SERVER & TOMBOL SUBMIT
+-- 2. LOGIKA PENEMBAKAN KE SERVER & TOMBOL SUBMIT GAME
 -- =======================================================
 local function fireCodeToServer(fullCode)
     local cleanCode = fullCode:gsub("%s+", ""):upper()
     if cleanCode == "" then return end
     
-    -- A. Cari dan tembak RemoteEvent di ReplicatedStorage (Paling sering dipakai game)
+    -- A. Cari dan tembak RemoteEvent
     for _, v in pairs(ReplicatedStorage:GetDescendants()) do
         if v:IsA("RemoteEvent") then
             local n = v.Name:lower()
@@ -104,10 +104,9 @@ local function fireCodeToServer(fullCode)
         end
     end
 
-    -- B. Masukkan teks ke kotak input game secara otomatis & klik tombol Submit
+    -- B. Masukkan ke TextBox game dan klik tombol Submit otomatis
     pcall(function()
         for _, guiObj in pairs(PlayerGui:GetDescendants()) do
-            -- Cari kotak teks tempat memasukkan kode (biasanya placeholder atau nama 'Code')
             if guiObj:IsA("TextBox") then
                 local name = guiObj.Name:lower()
                 local placeholder = guiObj.PlaceholderText:lower()
@@ -116,11 +115,9 @@ local function fireCodeToServer(fullCode)
                 end
             end
             
-            -- Cari tombol Submit dan picu kliknya
             if guiObj:IsA("TextButton") then
                 local btnText = guiObj.Text:lower()
                 if btnText:find("submit") or btnText:find("redeem") then
-                    -- Gunakan firesignal jika didukung executor, atau Fire event manual
                     if firesignal then
                         firesignal(guiObj.MouseButton1Click)
                         firesignal(guiObj.Activated)
@@ -136,11 +133,11 @@ local function fireCodeToServer(fullCode)
 end
 
 local function startSpamming(fullCode)
-    StatusLabel.Text = "🔥 SPAM SUBMIT: " .. fullCode
+    StatusLabel.Text = "🔥 SPAM KODE: " + fullCode
     StatusLabel.TextColor3 = Color3.fromRGB(241, 196, 15)
     
     task.spawn(function()
-        for i = 1, 25 do -- Spam lebih banyak agar tembus
+        for i = 1, 20 do
             fireCodeToServer(fullCode)
             task.wait(0.005)
         end
@@ -150,20 +147,20 @@ local function startSpamming(fullCode)
 end
 
 -- =======================================================
--- 3. SISTEM TRIGGER UTAMA DENGAN FILTER GUI
+-- 3. SISTEM PEMBERSIHAN & PENGGABUNGAN FRAGMEN PER KELIMAT
 -- =======================================================
 local accumulatedText = ""
 local isListening = false
-local lastProcessedText = ""
+local lastFragment = ""
 
 RedeemBtn.MouseButton1Click:Connect(function()
     isListening = not isListening
     if isListening then
         RedeemBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
         RedeemBtn.Text = "MATIKAN SNIPER"
-        StatusLabel.Text = "Status: Aktif memantau 'use code'..."
+        StatusLabel.Text = "Status: Memantau fragmen 'use code'..."
         accumulatedText = ""
-        lastProcessedText = ""
+        lastFragment = ""
     else
         RedeemBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
         RedeemBtn.Text = "AKTIFKAN AUTO SNIPER"
@@ -180,24 +177,32 @@ game:GetService("RunService").Heartbeat:Connect(function()
             -- Abaikan teks dari panel kita sendiri
             if not obj:IsDescendantOf(ScreenGui) then
                 local rawText = obj.Text
-                if rawText:lower():find("use code") then
-                    if rawText ~= lastProcessedText then
-                        lastProcessedText = rawText
+                local lowerText = rawText:lower()
+                
+                -- Deteksi keberadaan teks "use code" secara case-insensitive
+                local findPos = lowerText:find("use code")
+                if findPos then
+                    -- Ambil murni teks yang berada di BELAKANG kata "use code"
+                    local afterText = rawText:sub(findPos + 8)
+                    -- Bersihkan spasi dan simbol, jadikan huruf kapital
+                    local cleanFragment = afterText:gsub("[^%w]", ""):upper()
+                    
+                    if cleanFragment ~= "" and cleanFragment ~= lastFragment then
+                        lastFragment = cleanFragment
+                        -- Gabungkan fragmen baru tanpa spasi dengan fragmen sebelumnya
+                        accumulatedText = accumulatedText .. cleanFragment
+                        CodeInput.Text = accumulatedText
                         
-                        local fragment = rawText:gsub("(?i).*use%s*code[:%s]*", "")
-                        fragment = fragment:gsub("%s+", "")
+                        -- Langsung jalankan spam submit untuk kalimat gabungan tersebut
+                        startSpamming(accumulatedText)
                         
-                        if fragment ~= "" then
-                            accumulatedText = accumulatedText .. fragment
-                            CodeInput.Text = accumulatedText
-                            startSpamming(accumulatedText)
-                            
-                            task.delay(5, function()
-                                if accumulatedText == CodeInput.Text then
-                                    accumulatedText = ""
-                                end
-                            end)
-                        end
+                        -- Reset akumulator otomatis setelah 8 detik jika ada kode baru
+                        task.delay(8, function()
+                            if accumulatedText == CodeInput.Text then
+                                accumulatedText = ""
+                                lastFragment = ""
+                            end
+                        end)
                     end
                 end
             end
