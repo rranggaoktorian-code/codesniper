@@ -1,10 +1,9 @@
 -- =======================================================
--- FINAL CLEAN FILTER CODE SNIPER
+-- ULTIMATE REMOTE & CHAT MESSAGE SNIPER
 -- =======================================================
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -18,8 +17,8 @@ ScreenGui.Name = "CodeSniperPanel"
 ScreenGui.Parent = CoreGui
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 320, 0, 220)
-Frame.Position = UDim2.new(0.5, -160, 0.4, -110)
+Frame.Size = UDim2.new(0, 320, 0, 210)
+Frame.Position = UDim2.new(0.5, -160, 0.4, -105)
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 Frame.Active = true
 Frame.Draggable = true
@@ -32,7 +31,7 @@ Corner.Parent = Frame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-Title.Text = "⚡ CLEAN CODE SNIPER"
+Title.Text = "⚡ ULTIMATE EVENT SNIPER"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.Font = Enum.Font.SourceSansBold
@@ -42,7 +41,7 @@ local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Size = UDim2.new(0.88, 0, 0, 35)
 StatusLabel.Position = UDim2.new(0.06, 0, 0.18, 0)
 StatusLabel.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-StatusLabel.Text = "Status: Menunggu kode bersih..."
+StatusLabel.Text = "Status: Siap menyadap event game..."
 StatusLabel.TextColor3 = Color3.fromRGB(46, 204, 113)
 StatusLabel.TextSize = 12
 StatusLabel.Font = Enum.Font.SourceSans
@@ -53,7 +52,7 @@ local CodeInput = Instance.new("TextBox")
 CodeInput.Size = UDim2.new(0.88, 0, 0, 35)
 CodeInput.Position = UDim2.new(0.06, 0, 0.42, 0)
 CodeInput.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-CodeInput.PlaceholderText = "Kode bersih..."
+CodeInput.PlaceholderText = "Kode tertangkap..."
 CodeInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 CodeInput.Text = ""
 CodeInput.TextColor3 = Color3.fromRGB(241, 196, 15)
@@ -75,7 +74,7 @@ local ManualInput = Instance.new("TextBox")
 ManualInput.Size = UDim2.new(0.88, 0, 0, 30)
 ManualInput.Position = UDim2.new(0.06, 0, 0.82, 0)
 ManualInput.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-ManualInput.PlaceholderText = "Atau ketik manual di sini..."
+ManualInput.PlaceholderText = "Ketik manual lalu Enter..."
 ManualInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 ManualInput.Text = ""
 ManualInput.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -83,7 +82,7 @@ ManualInput.TextSize = 12
 ManualInput.Font = Enum.Font.SourceSans
 ManualInput.Parent = Frame
 
--- Fungsi Tembak Server & Submit Game
+-- Fungsi Eksekusi
 local function fireCodeToServer(fullCode)
     local cleanCode = fullCode:gsub("%s+", ""):upper()
     if cleanCode == "" or #cleanCode > 20 then return end
@@ -119,25 +118,23 @@ local function fireCodeToServer(fullCode)
 end
 
 local function startSpamming(code)
-    StatusLabel.Text = "🔥 SPAM KODE: " + code
+    StatusLabel.Text = "🔥 SPAM KODE: " .. code
     task.spawn(function()
         for i = 1, 15 do
             fireCodeToServer(code)
             task.wait(0.01)
         end
-        StatusLabel.Text = "✅ Selesai Spam: " + code
+        StatusLabel.Text = "✅ Selesai Spam: " .. code
     end)
 end
 
--- Listener Utama
 local isListening = false
 ToggleBtn.MouseButton1Click:Connect(function()
     isListening = not isListening
     if isListening then
         ToggleBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
         ToggleBtn.Text = "MATIKAN SNIPER"
-        StatusLabel.Text = "Status: Memantau teks bersih..."
-        CodeInput.Text = ""
+        StatusLabel.Text = "Status: Menyadap event server..."
     else
         ToggleBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
         ToggleBtn.Text = "AKTIFKAN AUTO SNIPER"
@@ -145,43 +142,27 @@ ToggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fungsi Pembersih Teks Ekstrem (Membuang Tag HTML & Karakter Sampah)
-local function cleanGameText(txt)
-    -- Hapus tag HTML Roblox seperti <font color="..."> dll
-    local noHtml = txt:gsub("<[^<>]+>", "")
-    -- Ambil hanya huruf dan angka, ubah ke kapital
-    local result = noHtml:gsub("[^%w]", ""):upper()
-    return result
-end
-
-local function hookText(obj)
-    if obj:IsA("TextLabel") and not obj:IsDescendantOf(ScreenGui) then
-        obj:GetPropertyChangedSignal("Text"):Connect(function()
+-- Menyimak semua komunikasi RemoteEvent dari Server ke Client
+for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+    if v:IsA("RemoteEvent") then
+        v.OnClientEvent:Connect(function(...)
             if not isListening then return end
-            local txt = obj.Text
-            if txt and txt ~= "" then
-                local lower = txt:lower()
-                -- Filter ketat: Pastikan teks mengandung "use code" dan panjangnya masuk akal
-                if lower:find("use code") and #txt < 100 then
-                    -- Buang kalimat "use code", ambil sisanya
-                    local afterUseCode = txt:gsub("(?i).*use%s*code[:%s]*", "")
-                    local finalCode = cleanGameText(afterUseCode)
-                    
-                    if finalCode ~= "" and #finalCode >= 3 and #finalCode <= 15 then
-                        CodeInput.Text = finalCode
-                        startSpamming(finalCode)
+            local args = {...}
+            for _, arg in ipairs(args) do
+                if type(arg) == "string" then
+                    print("[REMOTE EVENT DATA]:", arg)
+                    if arg:lower():find("use code") or #arg >= 3 and #arg <= 15 then
+                        local clean = arg:gsub("[^%w]", ""):upper()
+                        if clean ~= "" and clean ~= "USECODE" then
+                            CodeInput.Text = clean
+                            startSpamming(clean)
+                        end
                     end
                 end
             end
         end)
     end
 end
-
-for _, obj in pairs(Workspace:GetDescendants()) do hookText(obj) end
-for _, obj in pairs(PlayerGui:GetDescendants()) do hookText(obj) end
-
-Workspace.DescendantAdded:Connect(function(obj) if isListening then hookText(obj) end end)
-PlayerGui.DescendantAdded:Connect(function(obj) if isListening then hookText(obj) end end)
 
 ManualInput.FocusLost:Connect(function(enterPressed)
     if enterPressed and ManualInput.Text ~= "" then
